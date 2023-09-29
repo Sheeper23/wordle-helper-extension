@@ -55,7 +55,7 @@ btn.addEventListener("click", async () => {
             if (!document.querySelector(".suggestionsContainer")) {
                 document.querySelector(".Board-module_boardContainer__TBHNL").appendChild(container)
                 const header = document.createElement("p")
-                header.innerHTML = "10 Next Best Guesses"
+                header.className = "suggestionsHeader"
                 container.appendChild(header)
                 for (let i = 0; i < 10; i++) {
                     const listItem = document.createElement("li")
@@ -225,6 +225,7 @@ btn.addEventListener("click", async () => {
                 return b[1]-a[1]
             })
 
+            document.querySelector(".suggestionsHeader").innerHTML = `10 Best Next Guesses (of ${results.length})`
             for (let i = 0; i < 10; i++) {
                 document.querySelector(`.listItem${i+1}`).innerHTML = i < results.length ? `${results[i][0]} ${Math.round(results[i][1]*10000)/10000}` : ""
             }
