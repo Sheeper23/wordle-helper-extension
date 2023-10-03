@@ -57,7 +57,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
             for (let b = 0; b < grid[a].length; b++) {
                 if (
                     ( grid[a][b].state === "correct" && grid[a][b].letter !== value.slice(b, b+1) ) ||
-                    ( grid[a][b].state === "present" && grid[a][b].letter === value.slice(b, b+1) ) ||
+                    ( (grid[a][b].state === "present" || grid[a][b].state === "absent") && grid[a][b].letter === value.slice(b, b+1) ) ||
                     ( grid[a][b].state === "present" && !value.includes(grid[a][b].letter) )
                 ) {
                     return false
@@ -125,7 +125,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
                                 for (let b = 0; b < word.length; b++) {
                                     if (
                                         ( word[b].state === "correct" && word[b].letter !== checkWord.slice(b, b+1) ) ||
-                                        ( word[b].state === "present" && word[b].letter === checkWord.slice(b, b+1) ) ||
+                                        ( (word[b].state === "present" || word[b].state === "absent") && word[b].letter === checkWord.slice(b, b+1) ) ||
                                         ( word[b].state === "present" && !checkWord.includes(word[b].letter) )
                                     ) {
                                         isAMatch = false
@@ -203,11 +203,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
 btn.addEventListener("click", async () => {
     let [tab] = await chrome.tabs.query({active: true, currentWindow: true}) // Find current tab
 
-    if (tab.url !== "https://www.nytimes.com/games/wordle/index.html") return
-
-    const para = document.createElement("p")
-    para.innerHTML = "Loading..."
-    document.body.append(para)
+    if (tab.url !== "https://www.nytimes.com/games/wordle/index.html" && tab.url !== "https://wordle-clone-navy.vercel.app/") return
 
     chrome.scripting.executeScript({ // Run the following script on our tab
         target: {tabId: tab.id},
@@ -228,7 +224,7 @@ btn.addEventListener("click", async () => {
             for (let i = 0; i < elems.length; i++){ 
                 const letters = elems[i].querySelectorAll(".Tile-module_tile__UWEHN")
                 for (let j = 0; j < letters.length; j++) {
-                    grid[i][j].letter = letters[j].innerHTML
+                    grid[i][j].letter = letters[j].innerHTML.toLowerCase()
                     grid[i][j].state = letters[j].dataset.state
 
                 }
