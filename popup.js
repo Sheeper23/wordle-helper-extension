@@ -36,11 +36,11 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
         header.className = "suggestionsHeader"
         document.body.appendChild(header)
         document.body.appendChild(container)
-        for (let i = 0; i < 10; i++) {
-            const listItem = document.createElement("p")
-            listItem.className = `listItem${i+1}`
-            container.appendChild(listItem)
-        }
+        // for (let i = 0; i < 10; i++) {
+        //     const listItem = document.createElement("p")
+        //     listItem.className = `listItem${i+1}`
+        //     container.appendChild(listItem)
+        // }
     }
     
     // eliminate impossible answers
@@ -193,9 +193,13 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
         return b[1]-a[1]
     })
 
-    document.querySelector(".suggestionsHeader").innerHTML = `10 Best Next Guesses (of ${results.length})`
-    for (let i = 0; i < 10; i++) {
-        document.querySelector(`.listItem${i+1}`).innerHTML = i < results.length ? `${results[i][0]} ${Math.round(results[i][1]*10000)/10000}` : ""
+    document.querySelector(".suggestionsHeader").innerHTML = `Best Next Guesses (of ${results.length})`
+    for (let i = 0; i < results.length; i++) {
+        const listItem = document.createElement("p")
+        listItem.className = `listItem${i+1}`
+        listItem.style.textTransform = "uppercase"
+        container.appendChild(listItem)
+        listItem.innerHTML = i < results.length ? `${results[i][0]} ${Math.round(results[i][1]*10000)/10000}` : ""
     }
 })
 
