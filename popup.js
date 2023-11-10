@@ -29,7 +29,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
     container.style.display = "flex"
     container.style.flexDirection = "column"
     container.style.gap = "10px"
-    container.style.color = "white"
+    container.style.color = "black"
     container.style.fontWeight = "600"
     if (!document.querySelector(".suggestionsContainer")) {
         const header = document.createElement("h2")
@@ -198,6 +198,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
         const listItem = document.createElement("p")
         listItem.className = `listItem${i+1}`
         listItem.style.textTransform = "uppercase"
+        listItem.style.fontSize = '15px'
         container.appendChild(listItem)
         listItem.innerHTML = i < results.length ? `${results[i][0]} ${Math.round(results[i][1]*10000)/10000}` : ""
     }
