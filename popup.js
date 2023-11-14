@@ -1,9 +1,29 @@
 import guessListRaw from "./wordle-master-alphabetical.json" assert { type: "json" }
+import freqListRaw from "./wordle-frequencies.json" assert { type : "json" }
 const guessList = guessListRaw.guesses
 
 let btn = document.getElementById("compute")
 
 chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
+    function sigmoid(x) {
+        return 1 / (1 + Math.exp(-x));
+    }
+
+    function linspace(start, stop, num) {
+        const step = (stop - start) / (num - 1);
+        return Array.from({length: num}, (_, i) => start + step * i);
+    }
+
+    const zip = (a, b) => a.map((e, i) => [e, b[i]])
+
+    let freqList = Object.keys(freqListRaw).sort((a, b) => freqListRaw[a] - freqListRaw[b])
+    let x_width = 10
+    let c = x_width * (-0.5 + 3000 / Object.keys(freqList).length)
+    let xs = linspace(c - x_width / 2, c + x_width / 2, Object.keys(freqList).length)
+    let datafiedFreqs = {}
+    zip(freqList, xs).forEach((tuple) => {datafiedFreqs[tuple[0]] = sigmoid(tuple[1])})
+    
+    
     function allOccurencesOfPresentOrCorrect(arr) {
         let num = 0
         arr.forEach((val) => {
@@ -184,13 +204,13 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
             sum += probabilityOfOption * Math.log2(1/probabilityOfOption)
         })
         
-        results.push([eachWord, sum])
+        results.push([eachWord, sum, datafiedFreqs[eachWord]])
 
     }
 
     // sort results
     results.sort((a, b) => {
-        return b[1]-a[1]
+        return (b[1] + b[2])-(a[1] + b[2]) // lazy way of incorporating freqs into sort
     })
 
     document.querySelector(".suggestionsHeader").innerHTML = `Best Next Guesses (of ${results.length})`
@@ -199,8 +219,9 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
         listItem.className = `listItem${i+1}`
         listItem.style.textTransform = "uppercase"
         listItem.style.fontSize = '15px'
+        listItem.style.textAlign = 'center'
         container.appendChild(listItem)
-        listItem.innerHTML = i < results.length ? `${results[i][0]} ${Math.round(results[i][1]*10000)/10000}` : ""
+        listItem.innerHTML = i < results.length ? `${results[i][0]} ${Math.round(results[i][1]*10000)/10000} ${Math.round(results[i][2]*10000)/10000}` : ""
     }
 })
 
