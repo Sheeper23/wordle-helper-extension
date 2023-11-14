@@ -195,7 +195,9 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
                 }
             }
         }
-        
+        console.log(eachWord)
+        console.log(matches)
+        console.log(" ")
         
         // calculate the bits of each choice
         let sum = 0
@@ -204,6 +206,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
             sum += probabilityOfOption * Math.log2(1/probabilityOfOption)
         })
         
+        // add to the results array
         results.push([eachWord, sum, datafiedFreqs[eachWord]])
 
     }
