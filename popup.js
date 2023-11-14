@@ -125,76 +125,39 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
         // all matches of this word and corresponding color combos
         let matches = {}
 
-        // go through each color combination of the word
-        for (let color1 of colors) {
-            for (let color2 of colors) {
-                for (let color3 of colors) {
-                    for (let color4 of colors) {
-                        for (let color5 of colors) {
-                            // better representation of our word, split into letters and corresponding states
-                            const word = [{letter: eachWord[0], state: color1}, {letter: eachWord[1], state: color2}, {letter: eachWord[2], state: color3}, {letter: eachWord[3], state: color4}, {letter: eachWord[4], state: color5}]
+        // check against every other word
+        for (let checkWord of updatedGuessList) {
+            let tempWord = checkWord.toUpperCase()
+            let tempLetters = eachWord.toUpperCase()
+            let tempColors = ["", "", "", "", ""]
 
-                            // check against every other word
-                            for (let checkWord of updatedGuessList) {
-                                let isAMatch = true
-
-                                // need some sort of way to check for duplicate letters showing true and incorporate into absents
-                                let seen = {}
-
-                                // green and partial yellow pass
-                                for (let b = 0; b < word.length; b++) {
-                                    if (
-                                        ( word[b].state === "correct" && word[b].letter !== checkWord.slice(b, b+1) ) ||
-                                        ( (word[b].state === "present" || word[b].state === "absent") && word[b].letter === checkWord.slice(b, b+1) ) ||
-                                        ( word[b].state === "present" && !checkWord.includes(word[b].letter) )
-                                    ) {
-                                        isAMatch = false
-                                        break
-                                    }
-                                    if (word[b].letter in seen) {
-                                        seen[word[b].letter].push(word[b].state)
-                                    }
-                                    else {
-                                        seen[word[b].letter] = [word[b].state]
-                                    }
-                                }
-
-                                if(!isAMatch) {
-                                    continue
-                                }
-
-                                // misc pass
-                                for (let b = 0; b < word.length; b++) {
-                                    if (word[b].state === "absent") {
-                                        if ( allOccurencesOfPresentOrCorrect(seen[word[b].letter]) === 0 && checkWord.includes(word[b].letter) ) {
-                                            isAMatch = false
-                                            break
-                                        }
-                                        if ( allOccurencesOfPresentOrCorrect(seen[word[b].letter]) !== allOccurencesOfLetter(word[b].letter, checkWord) ) {
-                                            isAMatch = false
-                                            break
-                                        }
-                                    }
-                                    if (word[b].state === "present" || word[b].state == "correct") {
-                                        if ( allOccurencesOfPresentOrCorrect(seen[word[b].letter]) > allOccurencesOfLetter(word[b].letter, checkWord)) {
-                                            isAMatch = false
-                                            break
-                                        }
-                                    }
-                                }
-
-                                if (isAMatch) {
-                                    // console.log(`${color1} ${color2} ${color3} ${color4} ${color5}`)
-                                    if (`${color1} ${color2} ${color3} ${color4} ${color5}` in matches) matches[`${color1} ${color2} ${color3} ${color4} ${color5}`].push(checkWord)
-                                    else matches[`${color1} ${color2} ${color3} ${color4} ${color5}`] = [checkWord]
-                                }
-                            }
-                            // matches[`${color1} ${color2} ${color3} ${color4} ${color5}`] = word
-                        }
+            for (let i = 0; i < tempLetters.length; i++) {
+                if (tempLetters.charAt(i) === tempWord.charAt(i)) {
+                    tempColors[i] = "correct"
+                    tempWord = tempWord.slice(0, i) + tempWord.charAt(i).toLowerCase() + tempWord.slice(i+1)
+                    tempLetters = tempLetters.slice(0, i) + tempLetters.charAt(i).toLowerCase() + tempLetters.slice(i+1)
+                }
+            }
+            
+            for (let i = 0; i < tempLetters.length; i++) {
+                if (tempColors[i] !== "correct") {
+                    if (tempWord.includes(tempLetters.charAt(i))) {
+                        tempColors[i] = "present"
+                        tempWord = tempWord.slice(0, tempWord.indexOf(tempLetters[i])) + tempWord.charAt(tempWord.indexOf(tempLetters[i])).toLowerCase() + tempWord.slice(tempWord.indexOf(tempLetters[i])+1)
+                        tempLetters = tempLetters.slice(0, i) + tempLetters.charAt(i).toLowerCase() + tempLetters.slice(i+1)
+                    }
+                    else {
+                        tempColors[i] = "absent"
                     }
                 }
             }
+            // console.log(`${color1} ${color2} ${color3} ${color4} ${color5}`)
+            if (`${tempColors[0]} ${tempColors[1]} ${tempColors[2]} ${tempColors[3]} ${tempColors[4]}` in matches) matches[`${tempColors[0]} ${tempColors[1]} ${tempColors[2]} ${tempColors[3]} ${tempColors[4]}`].push(checkWord)
+            else matches[`${tempColors[0]} ${tempColors[1]} ${tempColors[2]} ${tempColors[3]} ${tempColors[4]}`] = [checkWord]
+            
         }
+        // matches[`${color1} ${color2} ${color3} ${color4} ${color5}`] = word
+                        
         console.log(eachWord)
         console.log(matches)
         console.log(" ")
@@ -213,7 +176,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
 
     // sort results
     results.sort((a, b) => {
-        return (b[1] + b[2])-(a[1] + b[2]) // lazy way of incorporating freqs into sort
+        return (b[1]+b[2])-(a[1]+a[2]) // lazy way of incorporating freqs into sort
     })
 
     document.querySelector(".suggestionsHeader").innerHTML = `Best Next Guesses (of ${results.length})`
