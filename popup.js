@@ -44,7 +44,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
         return num
     }
     
-    const container = document.querySelector(".suggestionsContainer") ? document.querySelector(".suggestionsContainer") : document.createElement("div")
+    const container = document.createElement("div")
     container.className = "suggestionsContainer"
     container.style.display = "flex"
     container.style.flexDirection = "column"
@@ -176,7 +176,7 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
 
     // sort results
     results.sort((a, b) => {
-        return (b[1]+b[2])-(a[1]+a[2]) // lazy way of incorporating freqs into sort
+        return (b[1])-(a[1]) // lazy way of incorporating freqs into sort
     })
 
     document.querySelector(".suggestionsHeader").innerHTML = `Best Next Guesses (of ${results.length})`
