@@ -1,13 +1,36 @@
+@keyframes scroll-gradient{
+    from {
+        background-position: 0% center;
+    }
+    to {
+        background-position: -200% center;
+    }
+}
+
 body {
+    margin: 0px;
     padding: 5px;
-    background-color: gray;
-    width: 20rem;
+    width: 35rem;
     display: flex;
     gap: 5px;
     flex-direction: column;
     align-items: center;
+    animation: scroll-gradient 5s linear infinite;
+    background-size: 200%;
+    background-image: linear-gradient(
+        to right,
+        rgb(250, 204, 21),
+        rgb(249, 115, 22),
+        rgb(220, 38, 38),
+        rgb(249, 115, 22),
+        rgb(250, 204, 21)
+    );
 }
 h1, h2 {
     margin: 0;
     padding: 0;
+}
+
+h1 {
+    font-size: xx-large;
 }

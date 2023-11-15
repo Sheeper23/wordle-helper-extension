@@ -5,9 +5,8 @@ const guessList = guessListRaw.guesses
 let btn = document.getElementById("compute")
 
 chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
-    if (document.querySelector(".suggestionsContainer")) {
-        document.body.removeChild(document.querySelector(".suggestionsContainer"))
-        document.body.removeChild(document.querySelector(".suggestionsHeader"))
+    if (document.querySelector(".wrapper")) {
+        document.body.removeChild(document.querySelector(".wrapper"))
     }
 
     function sigmoid(x) {
@@ -48,25 +47,48 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
         })
         return num
     }
+
+    const wrapper = document.createElement("div")
+    wrapper.className = "wrapper"
+    wrapper.style.width = "100%"
+    wrapper.style.display = "flex"
+    wrapper.style.justifyContent = "space-evenly"
+    wrapper.style.color = "black"
+    wrapper.style.fontWeight = "600"
     
     const container = document.createElement("div")
     container.className = "suggestionsContainer"
     container.style.display = "flex"
     container.style.flexDirection = "column"
     container.style.gap = "10px"
-    container.style.color = "black"
-    container.style.fontWeight = "600"
-    if (!document.querySelector(".suggestionsContainer")) {
-        const header = document.createElement("h2")
-        header.className = "suggestionsHeader"
-        document.body.appendChild(header)
-        document.body.appendChild(container)
-        // for (let i = 0; i < 10; i++) {
-        //     const listItem = document.createElement("p")
-        //     listItem.className = `listItem${i+1}`
-        //     container.appendChild(listItem)
-        // }
-    }
+
+    const possibilities = document.createElement("div")
+    possibilities.className = "possibilities"
+    possibilities.style.display = "flex"
+    possibilities.style.flexDirection = "column"
+    possibilities.style.gap = "10px"
+    
+    const header = document.createElement("h2")
+    header.className = "suggestionsHeader"
+    header.style.textAlign = 'center'
+
+    const possHeader = document.createElement("h2")
+    possHeader.className = "possibilitiesHeader"
+    possHeader.style.textAlign = 'center'
+
+    const divider = document.createElement("div")
+    divider.style.width = "1px"
+    divider.style.backgroundColor = "black"
+
+
+    container.appendChild(header)
+    possibilities.appendChild(possHeader)
+    document.body.appendChild(wrapper)
+    wrapper.appendChild(container)
+    wrapper.appendChild(divider)
+    wrapper.appendChild(possibilities)
+    
+    
     
     // eliminate impossible answers
     const updatedGuessList = guessList.filter((value) => {
@@ -122,10 +144,9 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
     
     // compute all matches for all color combinations for all remaining words
     let results = []
-    const colors = ["correct", "present", "absent"]
 
     // go through each possible next guess
-    for (let eachWord of updatedGuessList) {
+    for (let eachWord of guessList) {
         
         // all matches of this word and corresponding color combos
         let matches = {}
@@ -173,30 +194,49 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
         })
         
         // add to the results array
-        results.push([eachWord, sum, datafiedFreqs[eachWord]])
-
-        console.log(eachWord)
-        console.log(matches)
-        console.log(" ")
-        
+        if (sum != 0) {
+            results.push([eachWord, sum, datafiedFreqs[eachWord]])
+            console.log(eachWord)
+            console.log(matches)
+            console.log(" ")
+        }
 
     }
 
     // sort results
     results.sort((a, b) => {
-        return (b[1])-(a[1]) // lazy way of incorporating freqs into sort
+        return (b[1])-(a[1])
     })
 
-    document.querySelector(".suggestionsHeader").innerHTML = `Best Next Guesses (of ${results.length})`
+    let possibilitiesList = []
+    updatedGuessList.forEach((e) => possibilitiesList.push([e, datafiedFreqs[e]]))
+
+    // sort possibilities list
+    possibilitiesList.sort((a, b) => {
+        return b[1] - a[1]
+    })
+
+    header.innerHTML = `Best Information Guesses (${results.length})`
     for (let i = 0; i < results.length; i++) {
         const listItem = document.createElement("p")
-        listItem.className = `listItem${i+1}`
         listItem.style.textTransform = "uppercase"
         listItem.style.fontSize = '15px'
         listItem.style.textAlign = 'center'
         container.appendChild(listItem)
-        listItem.innerHTML = i < results.length ? `${results[i][0]} ${Math.round(results[i][1]*10000)/10000} ${Math.round(results[i][2]*10000)/10000}` : ""
+        listItem.innerHTML = `${results[i][0]} ${Math.round(results[i][1]*10000)/10000}`
     }
+
+    possHeader.innerHTML = `Most Likely Answers (${possibilitiesList.length})`
+    for (let i = 0; i < possibilitiesList.length; i++) {
+        const listItem = document.createElement("p")
+        listItem.style.textTransform = "uppercase"
+        listItem.style.fontSize = '15px'
+        listItem.style.textAlign = 'center'
+        possibilities.appendChild(listItem)
+        listItem.innerHTML = `${possibilitiesList[i][0]} ${Math.round(possibilitiesList[i][1]*10000)/10000}`
+    }
+    
+    divider.style.height = possibilities.getBoundingClientRect().height
 })
 
 // Run on click
