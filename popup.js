@@ -94,6 +94,10 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
     const updatedGuessList = guessList.filter((value) => {
         for (let a = 0; a < grid.length; a++) {
             if (grid[a][0].state === "empty" || grid[a][0].state === "tbd"){
+                if (a == 0) {
+                    wrapper.innerHTML = "Please input a first guess first!"
+                    return;
+                }
                 continue
             }
 
