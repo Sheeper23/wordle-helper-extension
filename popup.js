@@ -4,7 +4,7 @@ const guessList = guessListRaw.guesses
 
 let btn = document.getElementById("compute")
 
-chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
+chrome.runtime.onMessage.addListener((grid) => {
     if (document.querySelector(".wrapper")) {
         document.body.removeChild(document.querySelector(".wrapper"))
     }
@@ -62,11 +62,47 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
     container.style.flexDirection = "column"
     container.style.gap = "10px"
 
+    const containerMain = document.createElement("div")
+    containerMain.className = "suggestionsMain"
+    containerMain.style.display = "flex"
+
+    const containerWords = document.createElement("div")
+    containerWords.className = "containerWords"
+    containerWords.style.display = "flex"
+    containerWords.style.flexDirection = "column"
+    containerWords.style.gap = "10px"
+    containerWords.style.width = "100%"
+
+    const containerBits = document.createElement("div")
+    containerBits.className = "containerBits"
+    containerBits.style.display = "flex"
+    containerBits.style.flexDirection = "column"
+    containerBits.style.gap = "10px"
+    containerBits.style.width = "100%"
+
     const possibilities = document.createElement("div")
     possibilities.className = "possibilities"
     possibilities.style.display = "flex"
     possibilities.style.flexDirection = "column"
     possibilities.style.gap = "10px"
+
+    const possibilitiesMain = document.createElement("div")
+    possibilitiesMain.className = "possibilitiesMain"
+    possibilitiesMain.style.display = "flex"
+
+    const possibilitiesWords = document.createElement("div")
+    possibilitiesWords.className = "possibilitiesWords"
+    possibilitiesWords.style.display = "flex"
+    possibilitiesWords.style.flexDirection = "column"
+    possibilitiesWords.style.gap = "10px"
+    possibilitiesWords.style.width = "100%"
+
+    const possibilitiesProbs = document.createElement("div")
+    possibilitiesProbs.className = "possibilitiesProbs"
+    possibilitiesProbs.style.display = "flex"
+    possibilitiesProbs.style.flexDirection = "column"
+    possibilitiesProbs.style.gap = "10px"
+    possibilitiesProbs.style.width = "100%"
     
     const header = document.createElement("h2")
     header.className = "suggestionsHeader"
@@ -82,7 +118,13 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
 
 
     container.appendChild(header)
+    container.appendChild(containerMain)
+    containerMain.appendChild(containerWords)
+    containerMain.appendChild(containerBits)
     possibilities.appendChild(possHeader)
+    possibilities.appendChild(possibilitiesMain)
+    possibilitiesMain.appendChild(possibilitiesWords)
+    possibilitiesMain.appendChild(possibilitiesProbs)
     document.body.appendChild(wrapper)
     wrapper.appendChild(container)
     wrapper.appendChild(divider)
@@ -222,22 +264,66 @@ chrome.runtime.onMessage.addListener((grid, sender, senderResponse) => {
 
     header.innerHTML = `Best Information Guesses (${results.length})`
     for (let i = 0; i < results.length; i++) {
-        const listItem = document.createElement("p")
-        listItem.style.textTransform = "uppercase"
-        listItem.style.fontSize = '15px'
-        listItem.style.textAlign = 'center'
-        container.appendChild(listItem)
-        listItem.innerHTML = `${results[i][0]} ${Math.round(results[i][1]*10000)/10000}`
+        if (i == 0) {
+            const wordsHeader = document.createElement("h3")
+            wordsHeader.className = "suggestWordHead"
+            wordsHeader.style.textAlign = 'center'
+            wordsHeader.style.textDecoration = 'underline'
+            wordsHeader.innerHTML = "Words:"
+            const bitsHeader = document.createElement("h3")
+            bitsHeader.className = "suggestBitsHead"
+            bitsHeader.style.textAlign = 'center'
+            bitsHeader.style.textDecoration = 'underline'
+            bitsHeader.innerHTML = "Bits:"
+            containerWords.appendChild(wordsHeader)
+            containerBits.append(bitsHeader)
+        }
+        
+        
+        const listItem1 = document.createElement("p")
+        const listItem2 = document.createElement("p")
+        listItem1.style.textTransform = "uppercase"
+        listItem1.style.fontSize = '15px'
+        listItem1.style.textAlign = 'center'
+        listItem2.style.textTransform = "uppercase"
+        listItem2.style.fontSize = '15px'
+        listItem2.style.textAlign = 'center'
+        containerWords.appendChild(listItem1)
+        containerBits.appendChild(listItem2)
+        listItem1.innerHTML = `${results[i][0]}`
+        listItem2.innerHTML = `${Math.round(results[i][1]*10000)/10000}`
     }
 
     possHeader.innerHTML = `Most Likely Answers (${possibilitiesList.length})`
     for (let i = 0; i < possibilitiesList.length; i++) {
-        const listItem = document.createElement("p")
-        listItem.style.textTransform = "uppercase"
-        listItem.style.fontSize = '15px'
-        listItem.style.textAlign = 'center'
-        possibilities.appendChild(listItem)
-        listItem.innerHTML = `${possibilitiesList[i][0]} ${Math.round(possibilitiesList[i][1]*10000)/10000}`
+        if (i == 0) {
+            const wordsHeader = document.createElement("h3")
+            wordsHeader.className = "answersWordHead"
+            wordsHeader.style.textAlign = 'center'
+            wordsHeader.style.textDecoration = 'underline'
+            wordsHeader.innerHTML = "Words:"
+            const probsHeader = document.createElement("h3")
+            probsHeader.className = "answersProbsHead"
+            probsHeader.style.textAlign = 'center'
+            probsHeader.style.textDecoration = 'underline'
+            probsHeader.innerHTML = "Frequencies:"
+            possibilitiesWords.appendChild(wordsHeader)
+            possibilitiesProbs.append(probsHeader)
+        }
+        
+        
+        const listItem1 = document.createElement("p")
+        const listItem2 = document.createElement("p")
+        listItem1.style.textTransform = "uppercase"
+        listItem1.style.fontSize = '15px'
+        listItem1.style.textAlign = 'center'
+        listItem2.style.textTransform = "uppercase"
+        listItem2.style.fontSize = '15px'
+        listItem2.style.textAlign = 'center'
+        possibilitiesWords.appendChild(listItem1)
+        possibilitiesProbs.appendChild(listItem2)
+        listItem1.innerHTML = `${possibilitiesList[i][0]}`
+        listItem2.innerHTML = `${Math.round(possibilitiesList[i][1]*10000)/100}%`
     }
     
     divider.style.height = possibilities.getBoundingClientRect().height

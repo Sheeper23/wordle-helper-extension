@@ -9,7 +9,8 @@
         "128": "wordle.png"
     },
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "background.js",
+        "type": "module"
     },
     "permissions": ["storage", "activeTab", "scripting"],
     "action": {
