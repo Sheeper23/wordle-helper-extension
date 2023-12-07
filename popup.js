@@ -22,7 +22,7 @@ chrome.runtime.onMessage.addListener((grid) => {
 
     let freqList = Object.keys(freqListRaw).sort((a, b) => freqListRaw[a] - freqListRaw[b])
     let x_width = 10
-    let c = x_width * (-0.5 + 3000 / Object.keys(freqList).length)
+    let c = x_width * (-0.5 + 4000 / Object.keys(freqList).length)
     let xs = linspace(c - x_width / 2, c + x_width / 2, Object.keys(freqList).length)
     let datafiedFreqs = {}
     zip(freqList, xs).forEach((tuple) => {datafiedFreqs[tuple[0]] = sigmoid(tuple[1])})
@@ -241,7 +241,7 @@ chrome.runtime.onMessage.addListener((grid) => {
         
         // add to the results array
         if (sum != 0) {
-            results.push([eachWord, sum, datafiedFreqs[eachWord]])
+            results.push([eachWord, sum])
             console.log(eachWord)
             console.log(matches)
             console.log(" ")
