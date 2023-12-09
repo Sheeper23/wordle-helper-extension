@@ -4,22 +4,31 @@ const guessList = guessListRaw.guesses
 
 let btn = document.getElementById("compute")
 
-chrome.runtime.onMessage.addListener((grid) => {
+// threshold to stop a word from being factored into bits of other words
+const IGNORE_THRESHOLD = 0.30
+
+// run the following when sent a response (preferably the grid)
+chrome.runtime.onMessage.addListener(async function(grid) {
+    // clear display if the button gets clicked while its active
     if (document.querySelector(".wrapper")) {
         document.body.removeChild(document.querySelector(".wrapper"))
     }
 
+    // standard sigmoid
     function sigmoid(x) {
         return 1 / (1 + Math.exp(-x));
     }
 
+    // clone of python np.linspace, generate n evenly spaced numbers from start to stop
     function linspace(start, stop, num) {
         const step = (stop - start) / (num - 1);
         return Array.from({length: num}, (_, i) => start + step * i);
     }
 
+    // clone of python zip() combines two lists into one with tuples at each index
     const zip = (a, b) => a.map((e, i) => [e, b[i]])
 
+    // calculate biased word frequency for each word
     let freqList = Object.keys(freqListRaw).sort((a, b) => freqListRaw[a] - freqListRaw[b])
     let x_width = 10
     let c = x_width * (-0.5 + 4000 / Object.keys(freqList).length)
@@ -27,7 +36,7 @@ chrome.runtime.onMessage.addListener((grid) => {
     let datafiedFreqs = {}
     zip(freqList, xs).forEach((tuple) => {datafiedFreqs[tuple[0]] = sigmoid(tuple[1])})
     
-    
+    // get total number of occurences of present or correct in an array
     function allOccurencesOfPresentOrCorrect(arr) {
         let num = 0
         arr.forEach((val) => {
@@ -38,6 +47,7 @@ chrome.runtime.onMessage.addListener((grid) => {
         return num
     }
 
+    // get the total number of occurences of letter in str
     function allOccurencesOfLetter(letter, str) {
         let num = 0;
         Array.from(str).forEach((val) => {
@@ -48,6 +58,7 @@ chrome.runtime.onMessage.addListener((grid) => {
         return num
     }
 
+    // create all the display elements
     const wrapper = document.createElement("div")
     wrapper.className = "wrapper"
     wrapper.style.width = "100%"
@@ -114,9 +125,9 @@ chrome.runtime.onMessage.addListener((grid) => {
 
     const divider = document.createElement("div")
     divider.style.width = "1px"
-    divider.style.backgroundColor = "black"
+    divider.style.backgroundColor = "black" 
 
-
+    // assemble the display
     container.appendChild(header)
     container.appendChild(containerMain)
     containerMain.appendChild(containerWords)
@@ -125,21 +136,22 @@ chrome.runtime.onMessage.addListener((grid) => {
     possibilities.appendChild(possibilitiesMain)
     possibilitiesMain.appendChild(possibilitiesWords)
     possibilitiesMain.appendChild(possibilitiesProbs)
-    document.body.appendChild(wrapper)
     wrapper.appendChild(container)
     wrapper.appendChild(divider)
     wrapper.appendChild(possibilities)
-    
-    
-    
+
+    // require user to input a first guess
+    if (grid[0][0].state === "empty" || grid[0][0].state === "tbd") {
+        document.body.appendChild(wrapper)
+        wrapper.innerHTML = "Please input a first guess first!"
+        return;
+    }
+
     // eliminate impossible answers
     const updatedGuessList = guessList.filter((value) => {
         for (let a = 0; a < grid.length; a++) {
+            // handle skip
             if (grid[a][0].state === "empty" || grid[a][0].state === "tbd"){
-                if (a == 0) {
-                    wrapper.innerHTML = "Please input a first guess first!"
-                    return;
-                }
                 continue
             }
 
@@ -148,6 +160,7 @@ chrome.runtime.onMessage.addListener((grid) => {
 
             // green and partial yellow pass
             for (let b = 0; b < grid[a].length; b++) {
+                // basic impossibility cases
                 if (
                     ( grid[a][b].state === "correct" && grid[a][b].letter !== value.slice(b, b+1) ) ||
                     ( (grid[a][b].state === "present" || grid[a][b].state === "absent") && grid[a][b].letter === value.slice(b, b+1) ) ||
@@ -155,6 +168,8 @@ chrome.runtime.onMessage.addListener((grid) => {
                 ) {
                     return false
                 }
+
+                // compile the statuses of the letters
                 if (grid[a][b].letter in seen) {
                     seen[grid[a][b].letter].push(grid[a][b].state)
                 }
@@ -165,6 +180,7 @@ chrome.runtime.onMessage.addListener((grid) => {
 
             // misc pass
             for (let b = 0; b < grid[a].length; b++) {
+                // analyze whether seeing an absent makes this word invalid
                 if (grid[a][b].state === "absent") {
                     if ( allOccurencesOfPresentOrCorrect(seen[grid[a][b].letter]) === 0 && value.includes(grid[a][b].letter) ) {
                         return false
@@ -173,6 +189,8 @@ chrome.runtime.onMessage.addListener((grid) => {
                         return false
                     }
                 }
+
+                // analyze whether seeing a present or correct would invalidate the word (handles duplicates)
                 if (grid[a][b].state === "present" || grid[a][b].state == "correct") {
                     if ( allOccurencesOfPresentOrCorrect(seen[grid[a][b].letter]) > allOccurencesOfLetter(grid[a][b].letter, value)) {
                         return false
@@ -180,25 +198,37 @@ chrome.runtime.onMessage.addListener((grid) => {
                 }
             }
 
-            // console.log(`${Object.keys(seen)} ${Object.values(seen)}`)
-
         }
         return true
     })
-    // console.log(updatedGuessList)
     
-    
+    // disappear the button and set working state
+    btn.style.display = "none"
+    document.querySelector("h1").innerHTML = `Working... est. ${guessList.length * updatedGuessList.filter((e) => datafiedFreqs[e] >= IGNORE_THRESHOLD).length / 1000000}sec`
+    await new Promise(resolve => setTimeout(resolve, 0));
+
     // compute all matches for all color combinations for all remaining words
     let results = []
 
+    let count = 0
+
     // go through each possible next guess
     for (let eachWord of guessList) {
-        
+
         // all matches of this word and corresponding color combos
         let matches = {}
 
+        // track number of skipped words in smart mode
+        let skipped = 0
+
         // check against every possible answer
         for (let checkWord of updatedGuessList) {
+            // smart mode, should make this optional (need to change bit calculation too)
+            if (datafiedFreqs[checkWord] < IGNORE_THRESHOLD) {
+                skipped++
+                continue 
+            }
+
             let tempWord = checkWord.toUpperCase()
             let tempLetters = eachWord.toUpperCase()
             let tempColors = ["", "", "", "", ""]
@@ -223,28 +253,27 @@ chrome.runtime.onMessage.addListener((grid) => {
                     }
                 }
             }
-            // console.log(`${color1} ${color2} ${color3} ${color4} ${color5}`)
+
             if (`${tempColors[0]} ${tempColors[1]} ${tempColors[2]} ${tempColors[3]} ${tempColors[4]}` in matches) matches[`${tempColors[0]} ${tempColors[1]} ${tempColors[2]} ${tempColors[3]} ${tempColors[4]}`].push(checkWord)
             else matches[`${tempColors[0]} ${tempColors[1]} ${tempColors[2]} ${tempColors[3]} ${tempColors[4]}`] = [checkWord]
             
-        }
-        // matches[`${color1} ${color2} ${color3} ${color4} ${color5}`] = word
-                        
-        
+            // count++
+            // if (Math.round((count / (guessList.length * updatedGuessList.filter((e) => datafiedFreqs[e] >= IGNORE_THRESHOLD).length))*100) in {0: 0, 20: 20, 40: 40, 60: 60, 80: 80, 100: 100}) {
+            //     document.querySelector("h1").innerHTML = `${Math.round((count / (guessList.length * updatedGuessList.filter((e) => datafiedFreqs[e] >= IGNORE_THRESHOLD).length))*100)}%`
+            //     await new Promise(resolve => setTimeout(resolve, 0));
+            // }
+        }        
         
         // calculate the bits of each choice
         let sum = 0
         Object.keys(matches).forEach((val) => {
-            const probabilityOfOption = matches[val].length / updatedGuessList.length
+            const probabilityOfOption = matches[val].length / (updatedGuessList.length - skipped) // skipped = 0 in non-smart runs
             sum += probabilityOfOption * Math.log2(1/probabilityOfOption)
         })
         
-        // add to the results array
+        // add to the results array ignoring useless guesses
         if (sum != 0) {
             results.push([eachWord, sum])
-            console.log(eachWord)
-            console.log(matches)
-            console.log(" ")
         }
 
     }
@@ -326,16 +355,19 @@ chrome.runtime.onMessage.addListener((grid) => {
         listItem2.innerHTML = `${Math.round(possibilitiesList[i][1]*10000)/100}%`
     }
     
+    btn.style.display = "block"
+    document.querySelector("h1").innerHTML = "Wordle Helper"
+    document.body.appendChild(wrapper)
+
     divider.style.height = possibilities.getBoundingClientRect().height
 })
 
-// Run on click
 btn.addEventListener("click", async () => {
-    let [tab] = await chrome.tabs.query({active: true, currentWindow: true}) // Find current tab
+    let [tab] = await chrome.tabs.query({active: true, currentWindow: true})
 
     if (tab.url !== "https://www.nytimes.com/games/wordle/index.html" && tab.url !== "https://wordle-clone-navy.vercel.app/") return
 
-    chrome.scripting.executeScript({ // Run the following script on our tab
+    chrome.scripting.executeScript({
         target: {tabId: tab.id},
         function: () => {
             
