@@ -9,7 +9,7 @@
 
 body {
     margin: 0px;
-    padding: 5px;
+    padding: 10px;
     width: 35rem;
     display: flex;
     gap: 5px;
@@ -33,4 +33,34 @@ h1, h2, h3 {
 
 h1 {
     font-size: xx-large;
+    cursor: default;
+    user-select: none;
+}
+
+button {
+    background: none;
+    animation: scroll-gradient 5s linear infinite;
+    background-size: 200%;
+    background-image: linear-gradient(
+        to right,
+        rgb(250, 204, 21),
+        rgb(249, 115, 22),
+        rgb(220, 38, 38),
+        rgb(249, 115, 22),
+        rgb(250, 204, 21)
+    );
+	color: inherit;
+	border: 2px solid black;
+    border-radius: 9999px;
+	padding: 5px;
+	font: inherit;
+    font-weight: 500;
+	cursor: pointer;
+	outline: inherit;
+    transition: scale;
+    transition-duration: 300ms;
+}
+
+button:hover {
+    scale: 105%;
 }
